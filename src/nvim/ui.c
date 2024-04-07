@@ -529,6 +529,13 @@ int ui_current_col(void)
   return cursor_col;
 }
 
+static bool ui_should_reset_cursor(void)
+{
+  // Do not reset the cursor in modes in which the cursor should be placed outside of its window
+  const bool no_reset = State == MODE_HITRETURN || State == MODE_ASKMORE || State == MODE_SETWSIZE || State == MODE_EXTERNCMD || State == MODE_CONFIRM;
+  return !no_reset;
+}
+
 void ui_flush(void)
 {
   assert(!ui_client_channel_id);
@@ -540,7 +547,18 @@ void ui_flush(void)
   msg_ext_ui_flush();
   msg_scroll_flush();
 
+  // Force cursor update in NORMAL_BUSY
+  if (State == MODE_NORMAL_BUSY) {
+    setcursor_mayforce(true);
+    pending_cursor_update = true;
+  }
+
   if (pending_cursor_update) {
+    // Reset the cursor to its position in the window to avoid sending incorrect position to the UI
+    if (ui_should_reset_cursor()) {
+      setcursor_mayforce(true);
+    }
+
     ui_call_grid_cursor_goto(cursor_grid_handle, cursor_row, cursor_col);
     pending_cursor_update = false;
   }

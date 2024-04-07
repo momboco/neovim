@@ -921,6 +921,10 @@ static uint8_t *command_line_enter(int firstc, int count, int indent, bool clear
 
   set_option_direct(kOptInccommand, CSTR_AS_OPTVAL(s->save_p_icm), 0, SID_NONE);
   State = s->save_State;
+
+  // Mode could be changed: NORMAL_MODE -> NORMAL_MODE_BUSY
+  s->state.check(&s->state);
+
   if (cmdpreview != save_cmdpreview) {
     cmdpreview = save_cmdpreview;  // restore preview state
     redraw_all_later(UPD_SOME_VALID);
